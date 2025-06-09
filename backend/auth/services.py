@@ -1,13 +1,40 @@
+from fastapi import Response
+
+from datetime import timedelta
+
+from src.settings import jwt_settings
 from users.repositories import UsersRepository
-from core.utils.passwords import hashing_password
+from core.utils.passwords import hashing_password, verify_password
+from core.utils.exceptions import EmailAlreadyRegistered
+from core.utils.jwt import create_jwt_token
 
-from .schemas import UserRegistrationSchema
-from .exceptions import EmailAlreadyRegistered
+from .schemas import UserRegistrationSchema, UserLoginSchema, AccessTokenSchema
+from .exceptions import LoginOrPasswordIncorrect, AccountNotActive
 
+
+class TokenService:
+    def create_access_token(self, payload: dict) -> str:
+        access_token = create_jwt_token(payload, timedelta(minutes=jwt_settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+        return access_token
+    
+    def create_refresh_token(self, payload: dict) -> str:
+        refresh_token = create_jwt_token(payload, timedelta(days=jwt_settings.REFRESH_TOKEN_EXPIRE_DAYS))
+        return refresh_token
+    
+    def set_token_to_cookies(self, key: str, token: str, max_age: int, response: Response) -> None:
+        response.set_cookie(
+            key=key,
+            value=token,
+            httponly=True,
+            secure=True,
+            samesite='strict',
+            max_age=max_age,
+        )
 
 class AuthService:
-    def __init__(self, users_repository: UsersRepository):
+    def __init__(self, users_repository: UsersRepository, token_service: TokenService):
         self.users_repository = users_repository
+        self.token_service = token_service
 
     async def registration(self, user_data: UserRegistrationSchema):
         user = await self.users_repository.get_by_email(user_data.email)
@@ -19,3 +46,20 @@ class AuthService:
         user_data_dict['password'] = hashing_password(user_data.password)
 
         await self.users_repository.create(user_data_dict)
+    
+    async def authentication(self, user_data: UserLoginSchema, response: Response) -> AccessTokenSchema:
+        user = await self.users_repository.get_by_email(user_data.email)
+
+        if not user or not verify_password(user_data.password, user.password):
+            raise LoginOrPasswordIncorrect()
+        
+        if user.is_active: # (Заменить на "if not" после добавления подтверждения email)
+            raise AccountNotActive()
+        
+        access_token = self.token_service.create_access_token({'sub': str(user.id), 'role': user.role})
+        refresh_token = self.token_service.create_refresh_token({'sub': str(user.id)})
+
+        self.token_service.set_token_to_cookies('access_token', access_token, jwt_settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60, response)
+        self.token_service.set_token_to_cookies('refresh_token', refresh_token, jwt_settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60, response)
+
+        return AccessTokenSchema(access_token=access_token)
