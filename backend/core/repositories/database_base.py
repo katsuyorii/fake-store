@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class BaseRepository:
+class DatabaseBaseRepository:
     def __init__(self, model, db: AsyncSession):
         self.model = model
         self.db = db

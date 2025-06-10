@@ -1,12 +1,12 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.repositories.base import BaseRepository
+from backend.core.repositories.database_base import DatabaseBaseRepository
 
 from .models import UserModel
 
 
-class UsersRepository(BaseRepository):
+class UsersRepository(DatabaseBaseRepository):
     def __init__(self, db: AsyncSession):
         super().__init__(UserModel, db)
     
