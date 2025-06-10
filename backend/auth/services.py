@@ -1,16 +1,35 @@
 from fastapi import Response
 
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 
 from src.settings import jwt_settings
 from users.repositories import UsersRepository
 from core.utils.passwords import hashing_password, verify_password
 from core.utils.exceptions import EmailAlreadyRegistered
 from core.utils.jwt import create_jwt_token
+from core.repositories.redis_base import RedisBaseRepository
 
 from .schemas import UserRegistrationSchema, UserLoginSchema, AccessTokenSchema
 from .exceptions import LoginOrPasswordIncorrect, AccountNotActive
 
+
+class TokenBlacklistService:
+    def __init__(self, redis_repository: RedisBaseRepository):
+        self.redis_repository = redis_repository
+    
+    async def add_to_blacklist(self, payload: dict, token: str) -> None:
+        key = f'blacklist:{token}'
+
+        now = int(datetime.now(timezone.utc).timestamp())
+        expire_token = payload.get('exp')
+        ex = expire_token - now
+
+        await self.redis_repository.set_key(key, 'true', ex)
+    
+    async def is_blacklisted(self, token: str) -> bool:
+        key = f'blacklist:{token}'
+
+        return self.redis_repository.exists_key(key)
 
 class TokenService:
     def create_access_token(self, payload: dict) -> str:
@@ -32,9 +51,10 @@ class TokenService:
         )
 
 class AuthService:
-    def __init__(self, users_repository: UsersRepository, token_service: TokenService):
+    def __init__(self, users_repository: UsersRepository, token_service: TokenService, token_blacklist_service: TokenBlacklistService):
         self.users_repository = users_repository
         self.token_service = token_service
+        self.token_blacklist_service = token_blacklist_service
 
     async def registration(self, user_data: UserRegistrationSchema):
         user = await self.users_repository.get_by_email(user_data.email)
