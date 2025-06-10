@@ -20,6 +20,28 @@ services:
       - .env
     volumes:
       - redis_data:/data
+    
+  broker:
+    image: rabbitmq:4.1.0-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    env_file:
+      - .env
+    
+  worker:
+    build: ./backend
+    container_name: celery
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+    command: celery -A src.celery.celery_app worker --loglevel=info
+    depends_on:
+      - broker
 
   backend:
     build: ./backend
@@ -35,6 +57,7 @@ services:
     depends_on:
       - db
       - cache
+      - worker
 
 volumes:
   postgres_data:

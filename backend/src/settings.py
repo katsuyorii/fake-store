@@ -1,3 +1,4 @@
+from pydantic import EmailStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,6 +27,24 @@ class RedisSettings(CustomBaseSettings):
     REDIS_PORT: int
     REDIS_POOL_SIZE: int
 
+class RabbitMQSettings(CustomBaseSettings):
+    RABBITMQ_DEFAULT_USER: str
+    RABBITMQ_DEFAULT_PASS: str
+    RABBITMQ_HOST: str
+    RABBITMQ_PORT: int
+
+    @property
+    def RABBIT_MQ_URL(self) -> str:
+        return f"amqp://{self.RABBITMQ_DEFAULT_USER}:{self.RABBITMQ_DEFAULT_PASS}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}//"
+
+class SMTPSettings(CustomBaseSettings):
+    SMTP_HOST: str
+    SMTP_PORT: int
+    SMTP_USER: EmailStr
+    SMTP_PASSWORD: str
+
 database_settings = DatabaseSettings()
 jwt_settings = JWTSettings()
 redis_settings = RedisSettings()
+rabbit_mq_settings = RabbitMQSettings()
+smtp_settings = SMTPSettings()
