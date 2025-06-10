@@ -42,9 +42,16 @@ class SMTPSettings(CustomBaseSettings):
     SMTP_PORT: int
     SMTP_USER: EmailStr
     SMTP_PASSWORD: str
+    EMAIL_MESSAGE_EXPIRE_MINUTES: int
+
+class PATHSettings(CustomBaseSettings):
+    BASE_URL: str
+    EMAIL_VERIFY_PATH: str
+    EMAIL_CHANGE_PATH: str
 
 database_settings = DatabaseSettings()
 jwt_settings = JWTSettings()
 redis_settings = RedisSettings()
 rabbit_mq_settings = RabbitMQSettings()
 smtp_settings = SMTPSettings()
+path_settings = PATHSettings()

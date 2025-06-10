@@ -11,4 +11,4 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 celery_app = Celery('worker', broker=rabbit_mq_settings.RABBIT_MQ_URL)
 
-celery_app.autodiscover_tasks()
+celery_app.autodiscover_tasks(['core'])

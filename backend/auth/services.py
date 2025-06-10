@@ -2,16 +2,25 @@ from fastapi import Response, Request
 
 from datetime import timedelta, datetime, timezone
 
-from src.settings import jwt_settings
+from src.settings import jwt_settings, smtp_settings
 from users.repositories import UsersRepository
 from core.utils.passwords import hashing_password, verify_password
 from core.utils.exceptions import EmailAlreadyRegistered, MissingJWTToken, InvalidJWTToken
 from core.utils.jwt import create_jwt_token, verify_jwt_token
 from core.repositories.redis_base import RedisBaseRepository
+from core.services.email_service import EmailService
+from core.tasks import send_email_task
 
 from .schemas import UserRegistrationSchema, UserLoginSchema, AccessTokenSchema
 from .exceptions import LoginOrPasswordIncorrect, AccountNotActive, AccountMissing
 
+
+class AuthEmailService(EmailService):
+    def create_verify_email_message(self, user_id: int) -> str:
+        verify_token = create_jwt_token({'sub': str(user_id)}, timedelta(minutes=smtp_settings.EMAIL_MESSAGE_EXPIRE_MINUTES))
+        message = self.render_email_template(verify_token, 'verify_email.html')
+    
+        return message
 
 class TokenBlacklistService:
     def __init__(self, redis_repository: RedisBaseRepository):
@@ -51,10 +60,11 @@ class TokenService:
         )
 
 class AuthService:
-    def __init__(self, users_repository: UsersRepository, token_service: TokenService, token_blacklist_service: TokenBlacklistService):
+    def __init__(self, users_repository: UsersRepository, token_service: TokenService, token_blacklist_service: TokenBlacklistService, auth_email_service: AuthEmailService):
         self.users_repository = users_repository
         self.token_service = token_service
         self.token_blacklist_service = token_blacklist_service
+        self.auth_email_service = auth_email_service
 
     async def registration(self, user_data: UserRegistrationSchema) -> None:
         user = await self.users_repository.get_by_email(user_data.email)
@@ -65,7 +75,10 @@ class AuthService:
         user_data_dict = user_data.model_dump()
         user_data_dict['password'] = hashing_password(user_data.password)
 
-        await self.users_repository.create(user_data_dict)
+        new_user = await self.users_repository.create(user_data_dict)
+
+        message = self.auth_email_service.create_verify_email_message(new_user.id)
+        send_email_task.delay(new_user.email, 'Подтверждение электронной почты', message)
     
     async def authentication(self, user_data: UserLoginSchema, response: Response) -> AccessTokenSchema:
         user = await self.users_repository.get_by_email(user_data.email)
