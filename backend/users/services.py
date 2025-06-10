@@ -10,3 +10,6 @@ class UsersService:
     
     async def update(self, update_user_data: UserUpdateSchema) -> UserModel:
         return await self.users_repository.update(self.current_user, update_user_data.model_dump(exclude_unset=True))
+    
+    async def delete(self) -> None:
+        await self.users_repository.delete(self.current_user)
