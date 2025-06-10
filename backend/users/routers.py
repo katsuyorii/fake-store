@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from .services import UsersService
-from .schemas import UserResponseSchema, UserUpdateSchema
+from .schemas import UserResponseSchema, UserUpdateSchema, UserChangePasswordSchema
 from .dependencies import get_users_service
 
 
@@ -22,3 +22,8 @@ async def update_account(update_user_data: UserUpdateSchema, users_service: User
 async def delete_account(users_service: UsersService = Depends(get_users_service)):
     await users_service.delete()
     return {'message': 'Account successfully deleted!'}
+
+@users_router.patch('/me/password')
+async def change_password_account(passwords_data: UserChangePasswordSchema, users_service: UsersService = Depends(get_users_service)):
+    await users_service.change_password(passwords_data)
+    return {'message': 'Password successfully changed!'}

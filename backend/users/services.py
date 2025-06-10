@@ -1,6 +1,9 @@
+from core.utils.passwords import verify_password
+
 from .repositories import UsersRepository
 from .models import UserModel
-from .schemas import UserUpdateSchema
+from .schemas import UserUpdateSchema, UserChangePasswordSchema
+from .exceptions import IncorrectPassword
 
 
 class UsersService:
@@ -13,3 +16,9 @@ class UsersService:
     
     async def delete(self) -> None:
         await self.users_repository.delete(self.current_user)
+    
+    async def change_password(self, passwords_data: UserChangePasswordSchema) -> None:
+        if not verify_password(passwords_data.old_password, self.current_user.password):
+            raise IncorrectPassword()
+        
+        await self.users_repository.change_password(self.current_user, passwords_data.new_password)

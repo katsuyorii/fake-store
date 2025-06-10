@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from datetime import datetime
 
-from core.utils.validators import validate_phone_number_format
+from core.utils.validators import validate_phone_number_format, validate_password_complexity
 
 from .models import UserRoleEnum
 
@@ -28,3 +28,12 @@ class UserUpdateSchema(BaseModel):
     @classmethod
     def validate_phone_number(cls, value: str) -> str:
         return validate_phone_number_format(value)
+
+class UserChangePasswordSchema(BaseModel):
+    old_password: str
+    new_password: str
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        return validate_password_complexity(value)

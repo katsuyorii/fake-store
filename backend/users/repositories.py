@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.repositories.database_base import DatabaseBaseRepository
+from core.utils.passwords import hashing_password
 
 from .models import UserModel
 
@@ -16,4 +17,8 @@ class UsersRepository(DatabaseBaseRepository):
     
     async def verify_user(self, user: UserModel) -> None:
         user.is_active = True
+        await self.db.commit()
+    
+    async def change_password(self, user: UserModel, password: str) -> None:
+        user.password = hashing_password(password)
         await self.db.commit()
