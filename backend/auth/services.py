@@ -1,12 +1,12 @@
-from fastapi import Response
+from fastapi import Response, Request
 
 from datetime import timedelta, datetime, timezone
 
 from src.settings import jwt_settings
 from users.repositories import UsersRepository
 from core.utils.passwords import hashing_password, verify_password
-from core.utils.exceptions import EmailAlreadyRegistered
-from core.utils.jwt import create_jwt_token
+from core.utils.exceptions import EmailAlreadyRegistered, MissingJWTToken
+from core.utils.jwt import create_jwt_token, verify_jwt_token
 from core.repositories.redis_base import RedisBaseRepository
 
 from .schemas import UserRegistrationSchema, UserLoginSchema, AccessTokenSchema
@@ -56,7 +56,7 @@ class AuthService:
         self.token_service = token_service
         self.token_blacklist_service = token_blacklist_service
 
-    async def registration(self, user_data: UserRegistrationSchema):
+    async def registration(self, user_data: UserRegistrationSchema) -> None:
         user = await self.users_repository.get_by_email(user_data.email)
 
         if user is not None:
@@ -83,3 +83,16 @@ class AuthService:
         self.token_service.set_token_to_cookies('refresh_token', refresh_token, jwt_settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60, response)
 
         return AccessTokenSchema(access_token=access_token)
+    
+    async def logout(self, response: Response, request: Request) -> None:
+        refresh_token = request.cookies.get('refresh_token')
+
+        if not refresh_token:
+            raise MissingJWTToken()
+
+        payload = verify_jwt_token(refresh_token)
+
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+
+        await self.token_blacklist_service.add_to_blacklist(payload, refresh_token)

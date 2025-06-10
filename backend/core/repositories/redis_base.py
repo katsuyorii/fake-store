@@ -6,13 +6,13 @@ class RedisBaseRepository:
         self.redis = redis
 
     async def set_key(self, key: str, value: str, ex: int | None = None) -> None:
-        self.redis.set(key, value, ex)
+        await self.redis.set(key, value, ex)
     
     async def get_key(self, key: str) -> str | None:
-        return self.redis.get(key)
+        return await self.redis.get(key)
     
     async def delete_key(self, key: str) -> None:
-        self.redis.delete(key)
+        await self.redis.delete(key)
 
     async def exists_key(self, key: str) -> bool:
-        return self.redis.exists(key) > 0
+        return await self.redis.exists(key) > 0
