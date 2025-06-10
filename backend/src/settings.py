@@ -21,5 +21,11 @@ class JWTSettings(CustomBaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
 
+class RedisSettings(CustomBaseSettings):
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_POOL_SIZE: int
+
 database_settings = DatabaseSettings()
 jwt_settings = JWTSettings()
+redis_settings = RedisSettings()
