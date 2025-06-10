@@ -12,7 +12,7 @@ from core.services.email_service import EmailService
 from core.tasks import send_email_task
 
 from .schemas import UserRegistrationSchema, UserLoginSchema, AccessTokenSchema
-from .exceptions import LoginOrPasswordIncorrect, AccountNotActive, AccountMissing
+from .exceptions import LoginOrPasswordIncorrect, AccountNotActive, AccountMissing, AccountAlreadyActivated
 
 
 class AuthEmailService(EmailService):
@@ -86,7 +86,7 @@ class AuthService:
         if not user or not verify_password(user_data.password, user.password):
             raise LoginOrPasswordIncorrect()
         
-        if user.is_active: # (Заменить на "if not" после добавления подтверждения email)
+        if not user.is_active:
             raise AccountNotActive()
         
         access_token = self.token_service.create_access_token({'sub': str(user.id), 'role': user.role})
@@ -125,7 +125,7 @@ class AuthService:
         if not user:
             raise AccountMissing()
         
-        if user.is_active: # (Заменить на "if not" после добавления подтверждения email)
+        if not user.is_active:
             raise AccountNotActive()
 
         access_token = self.token_service.create_access_token({'sub': str(user.id), 'role': user.role})
@@ -135,3 +135,17 @@ class AuthService:
         self.token_service.set_token_to_cookies('refresh_token', new_refresh_token, jwt_settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60, response)
 
         return AccessTokenSchema(access_token=access_token)
+    
+    async def verify_email(self, jwt_token: str) -> None:
+        payload = verify_jwt_token(jwt_token)
+        user_id = int(payload.get('sub'))
+        
+        user = await self.users_repository.get_by_id(user_id)
+
+        if not user:
+            raise AccountMissing()
+        
+        if user.is_active:
+            raise AccountAlreadyActivated()
+        
+        await self.users_repository.verify_user(user)

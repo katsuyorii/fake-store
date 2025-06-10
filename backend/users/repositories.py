@@ -13,3 +13,7 @@ class UsersRepository(DatabaseBaseRepository):
     async def get_by_email(self, email: str) -> UserModel | None:
         result = await self.db.execute(select(UserModel).where(UserModel.email == email))
         return result.scalar_one_or_none()
+    
+    async def verify_user(self, user: UserModel) -> None:
+        user.is_active = True
+        await self.db.commit()

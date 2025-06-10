@@ -27,3 +27,8 @@ async def logout_user(response: Response, request: Request, auth_service: AuthSe
 @auth_router.post('/refresh', response_model=AccessTokenSchema)
 async def refresh_token(response: Response, request: Request, auth_service: AuthService = Depends(get_auth_service)):
     return await auth_service.refresh(response, request)
+
+@auth_router.get('/verify-email')
+async def verify_email_user(token: str, auth_service: AuthService = Depends(get_auth_service)):
+    await auth_service.verify_email(token)
+    return {'message': 'Account successfully activated!'}
