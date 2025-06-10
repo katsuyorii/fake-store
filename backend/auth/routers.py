@@ -23,3 +23,7 @@ async def authentication_user(user_data: UserLoginSchema, response: Response, au
 async def logout_user(response: Response, request: Request, auth_service: AuthService = Depends(get_auth_service)):
     await auth_service.logout(response, request)
     return {'message': 'Logged out successfully!'}
+
+@auth_router.post('/refresh', response_model=AccessTokenSchema)
+async def refresh_token(response: Response, request: Request, auth_service: AuthService = Depends(get_auth_service)):
+    return await auth_service.refresh(response, request)

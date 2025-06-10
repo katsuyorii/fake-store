@@ -5,12 +5,12 @@ from datetime import timedelta, datetime, timezone
 from src.settings import jwt_settings
 from users.repositories import UsersRepository
 from core.utils.passwords import hashing_password, verify_password
-from core.utils.exceptions import EmailAlreadyRegistered, MissingJWTToken
+from core.utils.exceptions import EmailAlreadyRegistered, MissingJWTToken, InvalidJWTToken
 from core.utils.jwt import create_jwt_token, verify_jwt_token
 from core.repositories.redis_base import RedisBaseRepository
 
 from .schemas import UserRegistrationSchema, UserLoginSchema, AccessTokenSchema
-from .exceptions import LoginOrPasswordIncorrect, AccountNotActive
+from .exceptions import LoginOrPasswordIncorrect, AccountNotActive, AccountMissing
 
 
 class TokenBlacklistService:
@@ -29,7 +29,7 @@ class TokenBlacklistService:
     async def is_blacklisted(self, token: str) -> bool:
         key = f'blacklist:{token}'
 
-        return self.redis_repository.exists_key(key)
+        return await self.redis_repository.exists_key(key)
 
 class TokenService:
     def create_access_token(self, payload: dict) -> str:
@@ -96,3 +96,29 @@ class AuthService:
         response.delete_cookie('refresh_token')
 
         await self.token_blacklist_service.add_to_blacklist(payload, refresh_token)
+    
+    async def refresh(self, response: Response, request: Request) -> AccessTokenSchema:
+        refresh_token = request.cookies.get('refresh_token')
+
+        if not refresh_token:
+            raise MissingJWTToken()
+        
+        if await self.token_blacklist_service.is_blacklisted(refresh_token):
+            raise InvalidJWTToken()
+        
+        payload = verify_jwt_token(refresh_token)
+        user = await self.users_repository.get_by_id(int(payload.get('sub')))
+
+        if not user:
+            raise AccountMissing()
+        
+        if user.is_active: # (Заменить на "if not" после добавления подтверждения email)
+            raise AccountNotActive()
+
+        access_token = self.token_service.create_access_token({'sub': str(user.id), 'role': user.role})
+        new_refresh_token = self.token_service.create_refresh_token({'sub': str(user.id)})
+
+        self.token_service.set_token_to_cookies('access_token', access_token, jwt_settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60, response)
+        self.token_service.set_token_to_cookies('refresh_token', new_refresh_token, jwt_settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60, response)
+
+        return AccessTokenSchema(access_token=access_token)
