@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from .services import UsersService
-from .schemas import UserResponseSchema, UserUpdateSchema, UserChangePasswordSchema
+from .schemas import UserResponseSchema, UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema
 from .dependencies import get_users_service
 
 
@@ -27,3 +27,8 @@ async def delete_account(users_service: UsersService = Depends(get_users_service
 async def change_password_account(passwords_data: UserChangePasswordSchema, users_service: UsersService = Depends(get_users_service)):
     await users_service.change_password(passwords_data)
     return {'message': 'Password successfully changed!'}
+
+@users_router.patch('/me/email')
+async def change_email_account(email_data: UserChangeEmailSchema, users_service: UsersService = Depends(get_users_service)):
+    await users_service.change_email(email_data)
+    return {'message': 'Confirmation letter successfully sent to your email!'}

@@ -2,7 +2,7 @@ from fastapi import Response, Request
 
 from datetime import timedelta, datetime, timezone
 
-from src.settings import jwt_settings, smtp_settings
+from src.settings import jwt_settings, smtp_settings, path_settings
 from users.repositories import UsersRepository
 from core.utils.passwords import hashing_password, verify_password
 from core.utils.exceptions import EmailAlreadyRegistered, MissingJWTToken, InvalidJWTToken
@@ -18,7 +18,7 @@ from .exceptions import LoginOrPasswordIncorrect, AccountNotActive, AccountMissi
 class AuthEmailService(EmailService):
     def create_verify_email_message(self, user_id: int) -> str:
         verify_token = create_jwt_token({'sub': str(user_id)}, timedelta(minutes=smtp_settings.EMAIL_MESSAGE_EXPIRE_MINUTES))
-        message = self.render_email_template(verify_token, 'verify_email.html')
+        message = self.render_email_template(verify_token, 'verify_email.html', path_settings.EMAIL_VERIFY_PATH)
     
         return message
 

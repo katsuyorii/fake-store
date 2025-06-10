@@ -37,3 +37,6 @@ class UserChangePasswordSchema(BaseModel):
     @classmethod
     def validate_password(cls, value: str) -> str:
         return validate_password_complexity(value)
+
+class UserChangeEmailSchema(BaseModel):
+    new_email: EmailStr
