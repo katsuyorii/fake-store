@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from core.utils.passwords import verify_password
-from core.utils.jwt import create_jwt_token
+from core.utils.jwt import create_jwt_token, verify_jwt_token
 from core.services.email_service import EmailService
 from core.utils.exceptions import EmailAlreadyRegistered
 from core.tasks import send_email_task
@@ -14,14 +14,14 @@ from .exceptions import IncorrectPassword
 
 
 class UsersEmailService(EmailService):
-    def create_change_email_message(self, user_id: int) -> str:
-        verify_token = create_jwt_token({'sub': str(user_id)}, timedelta(minutes=smtp_settings.EMAIL_MESSAGE_EXPIRE_MINUTES))
+    def create_change_email_message(self, user_id: int, new_email: str) -> str:
+        verify_token = create_jwt_token({'sub': str(user_id), 'new_email': new_email}, timedelta(minutes=smtp_settings.EMAIL_MESSAGE_EXPIRE_MINUTES))
         message = self.render_email_template(verify_token, 'verify_email.html', path_settings.EMAIL_CHANGE_PATH)
     
         return message
 
 class UsersService:
-    def __init__(self, users_repository: UsersRepository, current_user: UserModel, users_email_service: UsersEmailService):
+    def __init__(self, users_repository: UsersRepository, users_email_service: UsersEmailService, current_user: UserModel | None = None):
         self.users_repository = users_repository
         self.users_email_service = users_email_service
         self.current_user = current_user
@@ -44,5 +44,12 @@ class UsersService:
         if user is not None:
             raise EmailAlreadyRegistered()
         
-        message = self.users_email_service.create_change_email_message(self.current_user.id)
+        message = self.users_email_service.create_change_email_message(self.current_user.id, email_data.new_email)
         send_email_task.delay(email_data.new_email, 'Смена адреса электронной почты', message)
+    
+    async def verify_change_email(self, jwt_token: str) -> None:
+        payload = verify_jwt_token(jwt_token)
+
+        user = await self.users_repository.get_by_id(int(payload.get('sub')))
+        
+        await self.users_repository.change_email(user, payload.get('new_email'))

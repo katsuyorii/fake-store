@@ -28,4 +28,4 @@ async def get_current_user(token: str = Depends(oauth2_scheme), users_repository
     return user
 
 async def get_users_service(users_repository: UsersRepository = Depends(get_users_repository), current_user: UserModel = Depends(get_current_user), users_email_service: UsersEmailService = Depends(get_users_email_service)) -> UsersService:
-    return UsersService(users_repository, current_user, users_email_service)
+    return UsersService(users_repository, users_email_service, current_user)

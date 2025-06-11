@@ -22,3 +22,7 @@ class UsersRepository(DatabaseBaseRepository):
     async def change_password(self, user: UserModel, password: str) -> None:
         user.password = hashing_password(password)
         await self.db.commit()
+    
+    async def change_email(self, user: UserModel, email: str) -> None:
+        user.email = email
+        await self.db.commit()
