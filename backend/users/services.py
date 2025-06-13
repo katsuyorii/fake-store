@@ -20,6 +20,11 @@ class UsersEmailService(EmailService):
     
         return message
 
+class UsersAddressService:
+    def __init__(self, users_repository: UsersRepository, current_user: UserModel):
+        self.users_repository = users_repository
+        self.current_user = current_user
+
 class UsersService:
     def __init__(self, users_repository: UsersRepository, users_email_service: UsersEmailService, current_user: UserModel | None = None):
         self.users_repository = users_repository
