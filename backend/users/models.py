@@ -1,5 +1,5 @@
-from sqlalchemy import text, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import text, String, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from enum import Enum
 from datetime import datetime
@@ -28,3 +28,18 @@ class UserModel(BaseModel):
 
     is_active: Mapped[bool] = mapped_column(default=False)
     is_mailing: Mapped[bool] = mapped_column(default=True)
+
+    addresses = relationship("UserAddress", back_populates="user", cascade="all, delete-orphan")
+
+class UserAddress(BaseModel):
+    __tablename__ = 'users_addresses'
+
+    city: Mapped[str]
+    street: Mapped[str]
+    flat: Mapped[int]
+    entrance: Mapped[int] = mapped_column(nullable=True)
+    floot: Mapped[int] = mapped_column(nullable=True)
+    intercom: Mapped[str] = mapped_column(nullable=True)
+
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
+    user = relationship('UserModel', back_populates='addresses')
