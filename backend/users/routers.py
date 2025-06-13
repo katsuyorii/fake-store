@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 
 from .services import UsersService, UsersAddressService, UsersEmailService
-from .schemas import UserResponseSchema, UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema, UserAddressesResponseSchema, UserAddressCreateSchema
+from .schemas import UserResponseSchema, UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema, UserAddressesResponseSchema, UserAddressCreateSchema, UserAddressUpdateSchema
 from .dependencies import get_users_service, get_users_repository, get_users_email_service, get_users_address_service
 from .repositories import UsersRepository
 
@@ -56,3 +56,7 @@ async def create_address(address_data: UserAddressCreateSchema, users_address_se
 async def delete_address(address_id: int, users_address_service: UsersAddressService = Depends(get_users_address_service)):
     await users_address_service.delete_address(address_id)
     return {'message': 'Address successfully deleted!'}
+
+@users_router.patch('/me/addresses/{address_id}', response_model=UserAddressesResponseSchema)
+async def update_address(address_id: int, updated_address_data: UserAddressUpdateSchema, users_address_service: UsersAddressService = Depends(get_users_address_service)):
+    return await users_address_service.update_address(address_id, updated_address_data)

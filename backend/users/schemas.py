@@ -57,3 +57,11 @@ class UserAddressCreateSchema(BaseModel):
     entrance: int | None = Field(default=None)
     floot: int | None = Field(default=None)
     intercom: str | None = Field(default=None)
+
+class UserAddressUpdateSchema(BaseModel):
+    city: str | None = Field(default=None)
+    street: str | None = Field(default=None)
+    flat: int | None = Field(default=None)
+    entrance: int | None = Field(default=None)
+    floot: int | None = Field(default=None)
+    intercom: str | None = Field(default=None)

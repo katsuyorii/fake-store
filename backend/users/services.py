@@ -9,7 +9,7 @@ from src.settings import smtp_settings, path_settings
 
 from .repositories import UsersRepository, UsersAddressRepository
 from .models import UserModel, UserAddress
-from .schemas import UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema, UserAddressCreateSchema
+from .schemas import UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema, UserAddressCreateSchema, UserAddressUpdateSchema
 from .exceptions import IncorrectPassword, AddressNotFound
 
 
@@ -28,7 +28,7 @@ class UsersAddressService:
     async def get_addresses(self) -> list[UserAddress]:
         return await self.users_address_repository.get_all_addresses(self.current_user)
     
-    async def get_address(self, address_id: int) -> UserAddress:
+    async def get_address(self, address_id: int) -> UserAddress | None:
         address = await self.users_address_repository.get_by_id(address_id)
 
         if not address:
@@ -43,6 +43,16 @@ class UsersAddressService:
         
         return new_address
     
+    async def update_address(self, address_id: int, updated_address_data: UserAddressUpdateSchema) -> UserAddress | None:
+        address = await self.users_address_repository.get_by_id(address_id)
+
+        if not address:
+            raise AddressNotFound()
+        
+        address_data_dict = updated_address_data.model_dump(exclude_unset=True)
+
+        return await self.users_address_repository.update(address, address_data_dict)
+        
     async def delete_address(self, address_id: int) -> None:
         address = await self.users_address_repository.get_by_id(address_id)
 
