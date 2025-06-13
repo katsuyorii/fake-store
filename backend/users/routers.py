@@ -44,6 +44,10 @@ async def verify_change_email_user(token: str, users_repository: UsersRepository
 async def get_addresses(users_address_service: UsersAddressService = Depends(get_users_address_service)):
     return await users_address_service.get_addresses()
 
+@users_router.get('/me/addresses/{address_id}', response_model=UserAddressesResponseSchema)
+async def get_address(address_id: int, users_address_service: UsersAddressService = Depends(get_users_address_service)):
+    return await users_address_service.get_address(address_id)
+
 @users_router.post('/me/addresses', response_model=UserAddressesResponseSchema, status_code=status.HTTP_201_CREATED)
 async def create_address(address_data: UserAddressCreateSchema, users_address_service: UsersAddressService = Depends(get_users_address_service)):
     return await users_address_service.create_address(address_data)
