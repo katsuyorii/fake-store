@@ -42,6 +42,14 @@ class UsersAddressService:
         new_address = await self.users_address_repository.create(address_data_dict)
         
         return new_address
+    
+    async def delete_address(self, address_id: int) -> None:
+        address = await self.users_address_repository.get_by_id(address_id)
+
+        if not address:
+            raise AddressNotFound()
+        
+        await self.users_address_repository.delete(address)
 
 class UsersService:
     def __init__(self, users_repository: UsersRepository, users_email_service: UsersEmailService, current_user: UserModel | None = None):

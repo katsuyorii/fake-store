@@ -51,3 +51,8 @@ async def get_address(address_id: int, users_address_service: UsersAddressServic
 @users_router.post('/me/addresses', response_model=UserAddressesResponseSchema, status_code=status.HTTP_201_CREATED)
 async def create_address(address_data: UserAddressCreateSchema, users_address_service: UsersAddressService = Depends(get_users_address_service)):
     return await users_address_service.create_address(address_data)
+
+@users_router.delete('/me/addresses/{address_id}')
+async def delete_address(address_id: int, users_address_service: UsersAddressService = Depends(get_users_address_service)):
+    await users_address_service.delete_address(address_id)
+    return {'message': 'Address successfully deleted!'}
