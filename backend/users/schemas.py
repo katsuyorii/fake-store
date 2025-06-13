@@ -40,3 +40,12 @@ class UserChangePasswordSchema(BaseModel):
 
 class UserChangeEmailSchema(BaseModel):
     new_email: EmailStr
+
+class UserAddressesResponseSchema(BaseModel):
+    id: int
+    city: str
+    street: str
+    flat: int
+    entrance: int | None
+    floot: int | None
+    intercom: str | None

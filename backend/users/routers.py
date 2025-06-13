@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 
-from .services import UsersService, UsersEmailService
-from .schemas import UserResponseSchema, UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema
-from .dependencies import get_users_service, get_users_repository, get_users_email_service
+from .services import UsersService, UsersAddressService, UsersEmailService
+from .schemas import UserResponseSchema, UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema, UserAddressesResponseSchema
+from .dependencies import get_users_service, get_users_repository, get_users_email_service, get_users_address_service
 from .repositories import UsersRepository
 
 
@@ -39,3 +39,7 @@ async def verify_change_email_user(token: str, users_repository: UsersRepository
     users_service = UsersService(users_repository, users_email_service, None)
     await users_service.verify_change_email(token)
     return {'message': 'Email address successfully changed!'}
+
+@users_router.get('/me/addresses', response_model=list[UserAddressesResponseSchema])
+async def get_addresses(users_address_service: UsersAddressService = Depends(get_users_address_service)):
+    return await users_address_service.get_addresses()

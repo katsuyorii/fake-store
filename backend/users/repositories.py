@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.repositories.database_base import DatabaseBaseRepository
 from core.utils.passwords import hashing_password
 
-from .models import UserModel
+from .models import UserModel, UserAddress
 
 
 class UsersRepository(DatabaseBaseRepository):
@@ -26,3 +26,8 @@ class UsersRepository(DatabaseBaseRepository):
     async def change_email(self, user: UserModel, email: str) -> None:
         user.email = email
         await self.db.commit()
+    
+    async def get_all_addresses(self, user: UserModel) -> list[UserAddress]:
+        result = await self.db.execute(select(UserAddress).where(UserAddress.user_id == user.id))
+
+        return result.scalars().all()

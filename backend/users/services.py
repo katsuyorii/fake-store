@@ -8,7 +8,7 @@ from core.tasks import send_email_task
 from src.settings import smtp_settings, path_settings
 
 from .repositories import UsersRepository
-from .models import UserModel
+from .models import UserModel, UserAddress
 from .schemas import UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema
 from .exceptions import IncorrectPassword
 
@@ -24,6 +24,9 @@ class UsersAddressService:
     def __init__(self, users_repository: UsersRepository, current_user: UserModel):
         self.users_repository = users_repository
         self.current_user = current_user
+    
+    async def get_addresses(self) -> list[UserAddress]:
+        return await self.users_repository.get_all_addresses(self.current_user)
 
 class UsersService:
     def __init__(self, users_repository: UsersRepository, users_email_service: UsersEmailService, current_user: UserModel | None = None):
