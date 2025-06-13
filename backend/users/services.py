@@ -7,9 +7,9 @@ from core.utils.exceptions import EmailAlreadyRegistered
 from core.tasks import send_email_task
 from src.settings import smtp_settings, path_settings
 
-from .repositories import UsersRepository
+from .repositories import UsersRepository, UsersAddressRepository
 from .models import UserModel, UserAddress
-from .schemas import UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema
+from .schemas import UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema, UserAddressCreateSchema
 from .exceptions import IncorrectPassword
 
 
@@ -21,12 +21,19 @@ class UsersEmailService(EmailService):
         return message
 
 class UsersAddressService:
-    def __init__(self, users_repository: UsersRepository, current_user: UserModel):
-        self.users_repository = users_repository
+    def __init__(self, users_address_repository: UsersAddressRepository, current_user: UserModel):
+        self.users_address_repository = users_address_repository
         self.current_user = current_user
     
     async def get_addresses(self) -> list[UserAddress]:
-        return await self.users_repository.get_all_addresses(self.current_user)
+        return await self.users_address_repository.get_all_addresses(self.current_user)
+    
+    async def create_address(self, address_data: UserAddressCreateSchema) -> UserAddress:
+        address_data_dict = address_data.model_dump(exclude_unset=True)
+        address_data_dict['user_id'] = self.current_user.id
+        new_address = await self.users_address_repository.create(address_data_dict)
+        
+        return new_address
 
 class UsersService:
     def __init__(self, users_repository: UsersRepository, users_email_service: UsersEmailService, current_user: UserModel | None = None):

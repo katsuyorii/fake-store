@@ -49,3 +49,11 @@ class UserAddressesResponseSchema(BaseModel):
     entrance: int | None
     floot: int | None
     intercom: str | None
+
+class UserAddressCreateSchema(BaseModel):
+    city: str
+    street: str
+    flat: int
+    entrance: int | None = Field(default=None)
+    floot: int | None = Field(default=None)
+    intercom: str | None = Field(default=None)

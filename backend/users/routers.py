@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 
 from .services import UsersService, UsersAddressService, UsersEmailService
-from .schemas import UserResponseSchema, UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema, UserAddressesResponseSchema
+from .schemas import UserResponseSchema, UserUpdateSchema, UserChangePasswordSchema, UserChangeEmailSchema, UserAddressesResponseSchema, UserAddressCreateSchema
 from .dependencies import get_users_service, get_users_repository, get_users_email_service, get_users_address_service
 from .repositories import UsersRepository
 
@@ -43,3 +43,7 @@ async def verify_change_email_user(token: str, users_repository: UsersRepository
 @users_router.get('/me/addresses', response_model=list[UserAddressesResponseSchema])
 async def get_addresses(users_address_service: UsersAddressService = Depends(get_users_address_service)):
     return await users_address_service.get_addresses()
+
+@users_router.post('/me/addresses', response_model=UserAddressesResponseSchema, status_code=status.HTTP_201_CREATED)
+async def create_address(address_data: UserAddressCreateSchema, users_address_service: UsersAddressService = Depends(get_users_address_service)):
+    return await users_address_service.create_address(address_data)
