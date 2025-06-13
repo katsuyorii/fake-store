@@ -7,8 +7,8 @@ class DatabaseBaseRepository:
         self.model = model
         self.db = db
     
-    async def get_all(self):
-        result = await self.db.execute(select(self.model))
+    async def get_all(self, skip: int = 0, limit: int = 5):
+        result = await self.db.execute(select(self.model).offset(skip).limit(limit))
         return result.scalars().all()
     
     async def get_by_id(self, id: int):

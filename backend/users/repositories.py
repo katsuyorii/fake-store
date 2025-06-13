@@ -11,8 +11,8 @@ class UsersAddressRepository(DatabaseBaseRepository):
     def __init__(self, db: AsyncSession):
         super().__init__(UserAddress, db)
     
-    async def get_all_addresses(self, user: UserModel) -> list[UserAddress]:
-        result = await self.db.execute(select(UserAddress).where(UserAddress.user_id == user.id))
+    async def get_all_addresses(self, user: UserModel, skip: int = 0, limit: int = 5) -> list[UserAddress]:
+        result = await self.db.execute(select(UserAddress).offset(skip).limit(limit).where(UserAddress.user_id == user.id))
 
         return result.scalars().all()
 
